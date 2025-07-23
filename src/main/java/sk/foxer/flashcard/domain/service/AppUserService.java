@@ -1,9 +1,10 @@
 package sk.foxer.flashcard.domain.service;
 
 import org.springframework.stereotype.Service;
+import sk.foxer.flashcard.api.exception.ResourceNotFoundException;
 import sk.foxer.flashcard.domain.model.AppUser;
 import sk.foxer.flashcard.domain.repository.AppUserRepository;
-import sk.foxer.flashcard.exception.NotFoundException;
+
 
 import java.util.List;
 
@@ -20,6 +21,6 @@ public class AppUserService {
     }
     public AppUser getUserById(Long id) {
         return appUserRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("User", id));
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
     }
 }

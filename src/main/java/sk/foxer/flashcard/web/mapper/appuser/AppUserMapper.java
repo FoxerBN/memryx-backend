@@ -1,36 +1,19 @@
 package sk.foxer.flashcard.web.mapper.appuser;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import sk.foxer.flashcard.domain.model.AppUser;
 import sk.foxer.flashcard.web.dto.appuser.AppUserDto;
 import sk.foxer.flashcard.web.mapper.DeckMapper;
 
-import java.util.stream.Collectors;
+import java.util.List;
 
-public class AppUserMapper {
+@Mapper(componentModel = "spring", uses = { DeckMapper.class })
+public interface AppUserMapper {
 
-    public static AppUserDto toDto(AppUser user) {
-        if (user == null) return null;
-        AppUserDto dto = new AppUserDto();
-        dto.setId(user.getId());
-        dto.setUsername(user.getUsername());
-        dto.setDisplayName(user.getDisplayName());
+    AppUserDto toDto(AppUser user);
 
-        if (user.getDecks() != null) {
-            dto.setDecks(user.getDecks()
-                    .stream()
-                    .map(DeckMapper::toDto)
-                    .collect(Collectors.toList()));
-        }
-        return dto;
-    }
+    AppUser toEntity(AppUserDto dto);
 
-    public static AppUser toEntity(AppUserDto dto) {
-        if (dto == null) return null;
-        AppUser user = new AppUser();
-        user.setId(dto.getId());
-        user.setUsername(dto.getUsername());
-        user.setDisplayName(dto.getDisplayName());
-        // Decky na entitu zväčša nemapuješ automaticky, to riešiš cez service, keď ich vytváraš
-        return user;
-    }
+    List<AppUserDto> toDtoList(List<AppUser> users);
 }
