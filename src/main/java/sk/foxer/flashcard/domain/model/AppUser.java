@@ -24,7 +24,7 @@ public class AppUser {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(length = 100)
+    @Column(nullable = false, length = 100)
     private String displayName;
 
     @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL, orphanRemoval = true)
