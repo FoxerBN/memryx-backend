@@ -75,4 +75,33 @@ public class AppUserService {
         AppUser user = mapper.toEntity(dto);
         return appUserRepository.save(user);
     }
+
+    /**
+     * Deletes a user by their ID.
+     *
+     * @param id the user's ID
+     * @throws ResourceNotFoundException if the user is not found
+     */
+    public void deleteUser(Long id){
+        AppUser user = getUserById(id);
+        if (user == null) throw new ResourceNotFoundException("User with id " + id + " not found");
+        appUserRepository.delete(user);
+    }
+
+    /**
+     * Updates the display name of a user.
+     *
+     * @param id          the user's ID
+     * @param displayName the new display name
+     * @return the updated AppUser instance
+     * @throws ResourceNotFoundException if the user is not found
+     */
+    public AppUser updateDisplayName(Long id, String displayName) {
+        AppUser user = getUserById(id);
+        if (user == null) throw new ResourceNotFoundException("User with id " + id + " not found");
+        user.setDisplayName(displayName);
+        return appUserRepository.save(user);
+    }
+
+    //TODO add method for
 }

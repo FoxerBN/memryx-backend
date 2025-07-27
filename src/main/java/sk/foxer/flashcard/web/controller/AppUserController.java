@@ -2,15 +2,18 @@ package sk.foxer.flashcard.web.controller;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sk.foxer.flashcard.domain.model.AppUser;
 import sk.foxer.flashcard.domain.service.AppUserService;
 import sk.foxer.flashcard.web.dto.appuser.AppUserBasicDto;
 import sk.foxer.flashcard.web.dto.appuser.AppUserCreateRequestDto;
+import sk.foxer.flashcard.web.dto.appuser.AppUserUpdateRequestDto;
 import sk.foxer.flashcard.web.mapper.appuser.AppUserBasicMapper;
 import sk.foxer.flashcard.web.mapper.appuser.AppUserMapper;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST controller for managing application users.
@@ -61,6 +64,34 @@ public class AppUserController {
     @PostMapping("/create")
     public AppUserBasicDto createUser(@Valid @RequestBody AppUserCreateRequestDto userDto) {
         AppUser user = appUserService.createUser(userDto, appUserBasicMapper);
+        return appUserBasicMapper.toDto(user);
+    }
+
+
+    /**
+     * Deletes a user by their unique identifier.
+     *
+     * @param id the unique ID of the user to delete
+     * @return a response indicating success
+     * @throws sk.foxer.flashcard.api.exception.ResourceNotFoundException if user not found
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Long id) {
+        appUserService.deleteUser(id);
+        return ResponseEntity.ok(Map.of("message", "User with id " + id + " deleted successfully", "userId", id));
+    }
+
+    /**
+     * Updates a user's display name.
+     *
+     * @param id       the unique ID of the user to update
+     * @param userDto  the request body containing the new display name
+     * @return the updated user's basic DTO
+     * @throws sk.foxer.flashcard.api.exception.ResourceNotFoundException if user not found
+     */
+    @PutMapping("/{id}")
+    public AppUserBasicDto updateUser(@PathVariable Long id, @Valid @RequestBody AppUserUpdateRequestDto userDto) {
+        AppUser user = appUserService.updateDisplayName(id, userDto.getDisplayName());
         return appUserBasicMapper.toDto(user);
     }
 }
