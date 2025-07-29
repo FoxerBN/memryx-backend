@@ -10,7 +10,6 @@ import sk.foxer.flashcard.web.dto.appuser.AppUserBasicDto;
 import sk.foxer.flashcard.web.dto.appuser.AppUserCreateRequestDto;
 import sk.foxer.flashcard.web.dto.appuser.AppUserUpdateRequestDto;
 import sk.foxer.flashcard.web.mapper.appuser.AppUserBasicMapper;
-import sk.foxer.flashcard.web.mapper.appuser.AppUserMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +26,6 @@ import java.util.Map;
 public class AppUserController {
 
     private final AppUserService appUserService;
-    private final AppUserMapper appUserMapper;
     private final AppUserBasicMapper appUserBasicMapper;
 
     /**

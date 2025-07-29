@@ -103,5 +103,5 @@ public class AppUserService {
         return appUserRepository.save(user);
     }
 
-    //TODO add method for
+    //TODO add method for updating user password
 }

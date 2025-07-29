@@ -1,10 +1,9 @@
 package sk.foxer.flashcard.web.mapper.appuser;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import sk.foxer.flashcard.domain.model.AppUser;
 import sk.foxer.flashcard.web.dto.appuser.AppUserDto;
-import sk.foxer.flashcard.web.mapper.DeckMapper;
+import sk.foxer.flashcard.web.mapper.deckmapper.DeckMapper;
 
 import java.util.List;
 
