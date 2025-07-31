@@ -1,4 +1,3 @@
--- Vytvorenie tabuliek
 CREATE TABLE app_user (
   id BIGSERIAL PRIMARY KEY,
   username VARCHAR(50) UNIQUE NOT NULL,
@@ -19,25 +18,13 @@ CREATE TABLE flashcard (
   back_text TEXT NOT NULL
 );
 
--- Vloženie používateľa
 INSERT INTO app_user (username, display_name)
 VALUES ('demo', 'Demo User');
 
--- Získaj ID používateľa pre ďalšie vloženia
--- Tento SELECT je tu len informatívne – pri reálnom použití zisti ID (napr. v Java alebo PGAdmin):
--- SELECT id FROM app_user WHERE username = 'demo';
-
--- Vloženie dvoch deckov
 INSERT INTO deck (app_user_id, name, description)
 VALUES
   ((SELECT id FROM app_user WHERE username = 'demo'), 'Základné slovíčka SK‑CZ', 'Demo balíček 10 slovíčok'),
   ((SELECT id FROM app_user WHERE username = 'demo'), 'Základné slovíčka SK‑EN', 'Demo balíček 13 slovíčok');
-
--- Vloženie flashcards (najprv zisti ID deckov, napríklad pomocou SELECT predtým)
--- Tu predpokladáme, že:
---   SK‑CZ má id = 1
---   SK‑EN má id = 2
---   Ak nie, zmeň podľa reality!
 
 INSERT INTO flashcard (deck_id, front_text, back_text) VALUES
   (1, 'kniha', 'knížka'),
