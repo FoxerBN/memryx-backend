@@ -3,6 +3,7 @@ package sk.foxer.flashcard.web.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sk.foxer.flashcard.domain.service.AuthService;
@@ -28,10 +29,17 @@ public class AuthController {
 
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
-        String refreshToken = body.get("refreshToken");
+    public ResponseEntity<?> refresh(
+            @CookieValue(name = "refresh_token", required = false) String refreshToken) {
+
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                    Map.of("error", "Missing refresh token"));
+        }
+
         HttpHeaders headers = new HttpHeaders();
-        Map<String, Object> resp = authService.refresh(refreshToken, headers, secureCookies);
-        return ResponseEntity.ok().headers(headers).body(resp);
+        Map<String, Object> body = authService.refresh(refreshToken, headers, secureCookies);
+
+        return ResponseEntity.ok().headers(headers).body(body);
     }
 }
