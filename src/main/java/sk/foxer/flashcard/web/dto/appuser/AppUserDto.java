@@ -2,7 +2,7 @@ package sk.foxer.flashcard.web.dto.appuser;
 
 import lombok.Getter;
 import lombok.Setter;
-import sk.foxer.flashcard.web.dto.deck.DeckDto;
+import sk.foxer.flashcard.web.dto.folder.FolderSummaryDto;
 
 import java.util.List;
 
@@ -12,6 +12,5 @@ public class AppUserDto {
     private Long id;
     private String username;
     private String displayName;
-    private List<DeckDto> decks;
-
+    private List<FolderSummaryDto> folders;
 }

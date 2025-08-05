@@ -4,9 +4,15 @@ CREATE TABLE app_user (
   display_name VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE deck (
+CREATE TABLE folder (
   id BIGSERIAL PRIMARY KEY,
   app_user_id BIGINT NOT NULL REFERENCES app_user(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE deck (
+  id BIGSERIAL PRIMARY KEY,
+  folder_id BIGINT NOT NULL REFERENCES folder(id) ON DELETE CASCADE,
   name VARCHAR(100) NOT NULL,
   description TEXT
 );
@@ -21,10 +27,16 @@ CREATE TABLE flashcard (
 INSERT INTO app_user (username, display_name)
 VALUES ('demo', 'Demo User');
 
-INSERT INTO deck (app_user_id, name, description)
+INSERT INTO folder (app_user_id, name)
 VALUES
-  ((SELECT id FROM app_user WHERE username = 'demo'), 'Základné slovíčka SK‑CZ', 'Demo balíček 10 slovíčok'),
-  ((SELECT id FROM app_user WHERE username = 'demo'), 'Základné slovíčka SK‑EN', 'Demo balíček 13 slovíčok');
+  ((SELECT id FROM app_user WHERE username = 'demo'), 'Jazyky');
+
+INSERT INTO deck (folder_id, name, description)
+VALUES
+  ((SELECT id FROM folder WHERE name = 'Jazyky' AND app_user_id = (SELECT id FROM app_user WHERE username = 'demo')),
+   'Základné slovíčka SK‑CZ', 'Demo balíček 10 slovíčok'),
+  ((SELECT id FROM folder WHERE name = 'Jazyky' AND app_user_id = (SELECT id FROM app_user WHERE username = 'demo')),
+   'Základné slovíčka SK‑EN', 'Demo balíček 13 slovíčok');
 
 INSERT INTO flashcard (deck_id, front_text, back_text) VALUES
   (1, 'kniha', 'knížka'),

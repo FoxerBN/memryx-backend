@@ -7,5 +7,5 @@ import sk.foxer.flashcard.web.dto.deck.DeckDto;
 import java.util.List;
 
 public interface DeckRepository extends JpaRepository<Deck, Long> {
-    List<Deck> findByAppUserId(Long appUserId);
+    List<Deck> findByFolderId(Long folderId);
 }

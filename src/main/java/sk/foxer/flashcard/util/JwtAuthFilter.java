@@ -37,18 +37,33 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+
+        System.out.println("JwtAuthFilter processing: " + request.getRequestURI());
+
+        // Vypíš všetky cookies
+        if (request.getCookies() != null) {
+            System.out.println("Cookies found: " + request.getCookies().length);
+            for (Cookie cookie : request.getCookies()) {
+                System.out.println("Cookie: " + cookie.getName() + " = " + (cookie.getName().equals("access_token") ? "JWT_TOKEN" : "OTHER"));
+            }
+        } else {
+            System.out.println("NO COOKIES FOUND!");
+        }
 
         String token = readAccessTokenFromCookie(request, "access_token");
-        if (token == null || !jwtService.isValid(token)) {
+        System.out.println("Access token from cookie: " + (token != null ? "FOUND" : "NOT FOUND"));
+
+        if (token == null || jwtService.isValid(token)) {
+            System.out.println("Token invalid or missing, continuing filter chain without auth");
             chain.doFilter(request, response);
             return;
         }
 
         String username = jwtService.extractUsername(token);
-        Long userId     = jwtService.extractUserId(token);
+        Long userId = jwtService.extractUserId(token);
+
         if (username == null || userId == null) {
             chain.doFilter(request, response);
             return;
@@ -64,10 +79,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (!adminUsername.isBlank() && adminUsername.equals(username)) {
             auths.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
-
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(user, null, auths);
-
         SecurityContextHolder.getContext().setAuthentication(auth);
         chain.doFilter(request, response);
     }

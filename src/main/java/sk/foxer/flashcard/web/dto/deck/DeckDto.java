@@ -12,6 +12,7 @@ public class DeckDto {
     private Long id;
     private String name;
     private String description;
+    private Long folderId;
     private List<FlashcardDto> flashcards;
 
 }

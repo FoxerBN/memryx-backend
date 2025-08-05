@@ -12,21 +12,23 @@ import sk.foxer.flashcard.web.dto.auth.LoginRequestDto;
 import java.time.Duration;
 import java.util.Map;
 
+/**
+ * Service for handling authentication and token management.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private final AppUserRepository userRepository;
     private final JwtService jwtService;
 
-
     /**
      * Logs in a user by generating access and refresh tokens.
-     * Sets cookies in the response headers for secure storage.
+     * Stores tokens in cookies for secure client storage.
      *
-     * @param dto             the login request data transfer object
+     * @param dto             login request data
      * @param responseHeaders headers to add cookies
-     * @param secureCookies   whether to set cookies as secure
-     * @return a map containing the username and userId
+     * @param secureCookies   whether cookies should be marked as secure (for HTTPS)
+     * @return a map with basic user info
      */
     public Map<String, Object> login(LoginRequestDto dto,
                                      HttpHeaders responseHeaders,
@@ -34,45 +36,44 @@ public class AuthService {
 
         AppUser user = userRepository.findByUsername(dto.getUsername());
         if (user == null) {
-            throw new ResourceNotFoundException(
-                    "User not found with username: " + dto.getUsername());
+            throw new ResourceNotFoundException("User not found with username: " + dto.getUsername());
         }
 
-        Duration accessExp  = Duration.ofMinutes(15);
-        String   accessJwt  = jwtService.generateToken(user, accessExp);
+        // Short-lived access token (15 min)
+        Duration accessExp = Duration.ofMinutes(15);
+        String accessJwt = jwtService.generateToken(user, accessExp);
 
         ResponseCookie accessCookie = ResponseCookie
                 .from("access_token", accessJwt)
                 .httpOnly(true)
-                .secure(secureCookies)          // true in prod
+                .secure(secureCookies)
                 .sameSite(secureCookies ? "None" : "Lax")
-                .path("/")                      // sent to every endpoint
+                .path("/")
                 .maxAge(accessExp)
                 .build();
 
         responseHeaders.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
-        /* ---------- OPTIONAL: long-term “remember me” ---------- */
+        // Optional: long-lived refresh token (6 months) if user requests "stay logged in"
         if (dto.isStayLoggedIn()) {
-            Duration refreshExp = Duration.ofDays(180);        // 6 months
-            String   refreshJwt = jwtService.generateToken(user, refreshExp);
+            Duration refreshExp = Duration.ofDays(180);
+            String refreshJwt = jwtService.generateToken(user, refreshExp);
 
             ResponseCookie refreshCookie = ResponseCookie
                     .from("refresh_token", refreshJwt)
                     .httpOnly(true)
                     .secure(secureCookies)
                     .sameSite(secureCookies ? "None" : "Lax")
-                    .path("/api/auth/refresh")   // <-- limits CSRF surface
+                    .path("/api/auth/refresh") // restricts CSRF surface
                     .maxAge(refreshExp)
                     .build();
 
             responseHeaders.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         }
-        /* ------------------------------------------------------- */
 
         return Map.of(
                 "username", user.getUsername(),
-                "userId",   user.getId()
+                "userId", user.getId()
         );
     }
 
@@ -80,28 +81,28 @@ public class AuthService {
      * Refreshes the access token using a valid refresh token.
      * Rotates the refresh token and issues a new access token.
      *
-     * @param refreshToken    the existing refresh token
+     * @param refreshToken    the existing refresh token from cookie
      * @param responseHeaders headers to add new cookies
-     * @param secureCookies   whether to set cookies as secure
-     * @return a map containing the message, username, and userId
+     * @param secureCookies   whether cookies should be marked as secure (for HTTPS)
+     * @return a map with a message and user info
      */
     public Map<String, Object> refresh(String refreshToken,
                                        HttpHeaders responseHeaders,
                                        boolean secureCookies) {
 
-        if (!jwtService.isValid(refreshToken)) {
+        if (jwtService.isValid(refreshToken)) {
             throw new RuntimeException("Invalid or expired refresh token");
         }
 
         String username = jwtService.extractUsername(refreshToken);
-        AppUser user    = userRepository.findByUsername(username);
+        AppUser user = userRepository.findByUsername(username);
         if (user == null) {
             throw new ResourceNotFoundException("User not found: " + username);
         }
 
-        /* 1️⃣ rotate refresh-token (recommended) */
+        // Rotate refresh token (issue new one)
         Duration refreshExp = Duration.ofDays(180);
-        String   newRefresh = jwtService.generateToken(user, refreshExp);
+        String newRefresh = jwtService.generateToken(user, refreshExp);
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", newRefresh)
                 .httpOnly(true)
                 .secure(secureCookies)
@@ -111,9 +112,9 @@ public class AuthService {
                 .build();
         responseHeaders.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
-        /* 2️⃣ mint short-lived access-token */
+        // Issue new short-lived access token
         Duration accessExp = Duration.ofMinutes(15);
-        String   accessJwt = jwtService.generateToken(user, accessExp);
+        String accessJwt = jwtService.generateToken(user, accessExp);
         ResponseCookie accessCookie = ResponseCookie.from("access_token", accessJwt)
                 .httpOnly(true)
                 .secure(secureCookies)
@@ -124,9 +125,9 @@ public class AuthService {
         responseHeaders.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
         return Map.of(
-                "message",  "access token refreshed",
+                "message", "access token refreshed",
                 "username", user.getUsername(),
-                "userId",   user.getId()
+                "userId", user.getId()
         );
     }
 

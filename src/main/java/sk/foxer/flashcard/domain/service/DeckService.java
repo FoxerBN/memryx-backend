@@ -3,115 +3,137 @@ package sk.foxer.flashcard.domain.service;
 import org.springframework.stereotype.Service;
 import sk.foxer.flashcard.api.exception.ResourceNotFoundException;
 import sk.foxer.flashcard.api.exception.ValidationException;
-import sk.foxer.flashcard.domain.model.AppUser;
 import sk.foxer.flashcard.domain.model.Deck;
 import sk.foxer.flashcard.domain.model.Flashcard;
-import sk.foxer.flashcard.domain.repository.AppUserRepository;
+import sk.foxer.flashcard.domain.model.Folder;
 import sk.foxer.flashcard.domain.repository.DeckRepository;
+import sk.foxer.flashcard.domain.repository.FolderRepository;
 import sk.foxer.flashcard.web.dto.deck.DeckCreateRequestDto;
 import sk.foxer.flashcard.web.dto.deck.DeckDto;
+import sk.foxer.flashcard.web.dto.deck.DeckSummaryDto;
 import sk.foxer.flashcard.web.mapper.deckmapper.DeckMapper;
+import sk.foxer.flashcard.web.mapper.deckmapper.DeckSummaryMapper;
+
 import java.util.List;
 
+/**
+ * Service for deck management logic: create, update, delete, fetch decks.
+ */
 @Service
 public class DeckService {
     private final DeckRepository deckRepository;
-    private final AppUserRepository appUserRepository;
+    private final FolderRepository folderRepository;
     private final DeckMapper deckMapper;
+    private final DeckSummaryMapper deckSummaryMapper;
 
-    public DeckService(DeckRepository deckRepository, AppUserRepository appUserRepository,
-                       DeckMapper deckMapper) {
-        this.appUserRepository = appUserRepository;
+    public DeckService(DeckRepository deckRepository, FolderRepository folderRepository,
+                       DeckMapper deckMapper, DeckSummaryMapper deckSummaryMapper) {
         this.deckRepository = deckRepository;
+        this.folderRepository = folderRepository;
         this.deckMapper = deckMapper;
+        this.deckSummaryMapper = deckSummaryMapper;
     }
+
     /**
-     * Retrieves all decks from the repository.
-     *
-     * @return a list of all decks
+     * Returns all decks in the system.
      */
     public List<Deck> getAllDecks() {
         return deckRepository.findAll();
     }
 
-
     /**
-     * Retrieves a deck by its unique identifier.
-     *
-     * @param id the unique ID of the deck
-     * @return the Deck instance
-     * @throws ResourceNotFoundException if the deck is not found
+     * Returns a deck by its id or throws if not found.
      */
     public Deck getDeckById(Long id) {
         return deckRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id: " + id));
     }
 
+
     /**
-     * Retrieves all decks associated with a specific user.
-     *
-     * @param userId the ID of the user
-     * @return a list of Decks associated with the user
-     * @throws ResourceNotFoundException if the user is not found
+     * Returns all deck summaries (name, description, flashcard count).
      */
-    public List<Deck> getAllDeckByUser(Long userId) {
-        AppUser user = appUserRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        return deckRepository.findByAppUserId(user.getId());
+    public List<DeckSummaryDto> getAllDeckSummaries() {
+        return deckSummaryMapper.toSummaryDtoList(deckRepository.findAll());
     }
 
     /**
-     * Creates a new deck for a user.
-     *
-     * @param userId the ID of the user creating the deck
-     * @param dto    the request DTO containing deck details
-     * @return the created Deck DTO
-     * @throws ValidationException if the request body is empty or invalid
+     * Returns deck summaries for a specific folder.
+     * @param folderId the folder id
+     * @return list of deck summaries in the folder
      */
-    public DeckDto createDeck(Long userId, DeckCreateRequestDto dto) {
+    public List<DeckSummaryDto> getDeckSummariesByFolder(Long folderId) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + folderId));
+        return deckSummaryMapper.toSummaryDtoList(deckRepository.findByFolderId(folderId));
+    }
+
+    /**
+     * Returns all decks in a specific folder.
+     */
+    public List<Deck> getDecksByFolderId(Long folderId) {
+        Folder folder = folderRepository.findById(folderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + folderId));
+        return deckRepository.findByFolderId(folder.getId());
+    }
+
+    /**
+     * Creates a new deck with flashcards in a folder.
+     * @param dto request data (must include flashcards and folderId)
+     * @return created deck as DTO
+     */
+    public DeckDto createDeck(DeckCreateRequestDto dto) {
         if (dto == null) throw new ValidationException("Request body is empty");
         if (dto.getFlashcards() == null || dto.getFlashcards().isEmpty()) {
             throw new ValidationException("At least one flashcard is required");
         }
+        if (dto.getFolderId() == null) {
+            throw new ValidationException("Folder ID is required");
+        }
 
-        AppUser user = appUserRepository.findById(userId)
-                .orElseThrow(() -> new ValidationException("User not found"));
+        Folder folder = folderRepository.findById(dto.getFolderId())
+                .orElseThrow(() -> new ValidationException("Folder not found with id: " + dto.getFolderId()));
 
         Deck deck = deckMapper.toEntity(dto);
-        deck.setAppUser(user);
+        deck.setFolder(folder);
 
         Deck saved = deckRepository.save(deck);
         return deckMapper.toDto(saved);
     }
 
     /**
-     * Deletes a deck by its unique identifier.
-     *
-     * @param id the unique ID of the deck to delete
-     * @throws ResourceNotFoundException if the deck is not found
+     * Deletes a deck by id.
      */
-    public void deleteDeck(Long id){
+    public void deleteDeck(Long id) {
         Deck deck = deckRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id: " + id));
         deckRepository.delete(deck);
     }
 
     /**
-     * Updates an existing deck with new details.
-     *
-     * @param id  the unique ID of the deck to update
-     * @param dto the request DTO containing updated deck details
-     * @return the updated Deck DTO
-     * @throws ResourceNotFoundException if the deck is not found
-     * @throws ValidationException if the request body is empty or invalid
+     * Updates a deck (name, description, flashcards, folder).
+     * @param id deck id
+     * @param dto new data
+     * @return updated deck as DTO
      */
     public DeckDto updateDeck(Long id, DeckCreateRequestDto dto) {
         Deck deck = deckRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id: " + id));
 
-        if (dto == null) {throw new ValidationException("Request body is empty");}
-        if (dto.getFlashcards() == null || dto.getFlashcards().isEmpty()) {throw new ValidationException("At least one flashcard is required");}
-        if (dto.getFlashcards().size() > 100) {throw new ValidationException("Max 100 flashcards per deck");}
+        if (dto == null) {
+            throw new ValidationException("Request body is empty");
+        }
+        if (dto.getFlashcards() == null || dto.getFlashcards().isEmpty()) {
+            throw new ValidationException("At least one flashcard is required");
+        }
+        if (dto.getFlashcards().size() > 100) {
+            throw new ValidationException("Max 100 flashcards per deck");
+        }
+        if (dto.getFolderId() != null && !dto.getFolderId().equals(deck.getFolder().getId())) {
+            Folder newFolder = folderRepository.findById(dto.getFolderId())
+                    .orElseThrow(() -> new ValidationException("Folder not found with id: " + dto.getFolderId()));
+            deck.setFolder(newFolder);
+        }
 
         List<Flashcard> flashcards = dto.getFlashcards().stream()
                 .map(flashcardDto -> {
