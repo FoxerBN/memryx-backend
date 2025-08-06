@@ -42,7 +42,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         System.out.println("JwtAuthFilter processing: " + request.getRequestURI());
 
-        // Vypíš všetky cookies
         if (request.getCookies() != null) {
             System.out.println("Cookies found: " + request.getCookies().length);
             for (Cookie cookie : request.getCookies()) {

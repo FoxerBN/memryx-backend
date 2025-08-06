@@ -69,6 +69,9 @@ public class AppUserService {
         if (dto.getUsername() == null || dto.getUsername().isBlank()) {
             throw new ValidationException("Username must not be null or blank");
         }
+        if (dto.getDisplayName() == null || dto.getDisplayName().isBlank()) {
+            throw new ValidationException("Display name must not be null or blank");
+        }
         if (appUserRepository.existsByUsername(dto.getUsername())) {
             throw new ConflictException("Username already exists");
         }

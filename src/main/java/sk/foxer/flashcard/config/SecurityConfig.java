@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/user/create").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/user/*").hasRole("ADMIN")
                         .requestMatchers("/api/decks/**").authenticated()

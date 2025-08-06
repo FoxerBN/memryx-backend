@@ -1,21 +1,22 @@
 package sk.foxer.flashcard.web.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import sk.foxer.flashcard.domain.model.Folder;
 import sk.foxer.flashcard.domain.service.FolderService;
 import sk.foxer.flashcard.web.dto.folder.FolderCreateRequestDto;
 import sk.foxer.flashcard.web.dto.folder.FolderDto;
+import sk.foxer.flashcard.web.dto.folder.FolderSummaryDto;
 import sk.foxer.flashcard.web.mapper.folder.FolderMapper;
-import sk.foxer.flashcard.web.mapper.folder.FolderSummaryMapper;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * REST controller for folder management.
+ */
 @RestController
 @RequestMapping("/api/folders")
 public class FolderController {
@@ -28,33 +29,58 @@ public class FolderController {
         this.folderMapper = folderMapper;
     }
 
-    @GetMapping("/test")
-    public List<Map<String, Object>> testFolders() {
-        List<Map<String, Object>> result = new ArrayList<>();
-        Map<String, Object> folder = new HashMap<>();
-        folder.put("id", 1);
-        folder.put("name", "Test Folder");
-        result.add(folder);
-        return result;
-    }
-
+    /** Get all folders as DTOs. */
     @GetMapping
     public List<FolderDto> getAllFolders() {
         return folderMapper.toDtoList(folderService.getAllFolders());
     }
 
+    /** Get all folders as summary DTOs. */
+    @GetMapping("/summary")
+    public List<FolderSummaryDto> getAllFolderSummaries() {
+        return folderService.getAllFolderSummaries();
+    }
+
+    /** Get folder by id. */
     @GetMapping("/{id}")
     public FolderDto getFolderById(@PathVariable Long id) {
         return folderMapper.toDto(folderService.getFolderById(id));
     }
 
-    @PostMapping("/user/{userId}")
-    public FolderDto createFolder(@PathVariable Long userId, @Valid @RequestBody FolderCreateRequestDto folderDto) {
-        return folderService.createFolder(userId, folderDto);
+    /** Get all folders for a user as DTOs. */
+    @GetMapping("/user/{userId}")
+    public List<FolderDto> getFoldersByUserId(@PathVariable Long userId) {
+        return folderMapper.toDtoList(folderService.getFoldersByUserId(userId));
     }
 
+    /** Get all folders for a user as summary DTOs. */
+    @GetMapping("/user/{userId}/summary")
+    public List<FolderSummaryDto> getFolderSummariesByUserId(@PathVariable Long userId) {
+        return folderService.getFolderSummariesByUserId(userId);
+    }
+
+    /** Create folder for a user. */
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<FolderDto> createFolder(@PathVariable Long userId,
+                                                  @Valid @RequestBody FolderCreateRequestDto folderDto) {
+        FolderDto created = folderService.createFolder(userId, folderDto);
+        return ResponseEntity.created(URI.create("/api/folders/" + created.getId())).body(created);
+    }
+
+    /** Update folder. */
+    @PutMapping("/{id}")
+    public ResponseEntity<FolderDto> updateFolder(@PathVariable Long id,
+                                                  @Valid @RequestBody FolderCreateRequestDto folderDto) {
+        FolderDto updated = folderService.updateFolder(id, folderDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    /** Delete folder. */
     @DeleteMapping("/{id}")
-    public void deleteFolder(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteFolder(@PathVariable Long id) {
         folderService.deleteFolder(id);
+        Map<String, String> resp = new HashMap<>();
+        resp.put("message", "Folder with id " + id + " deleted.");
+        return ResponseEntity.ok(resp);
     }
 }
