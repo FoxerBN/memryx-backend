@@ -27,6 +27,14 @@ public class AuthController {
         return ResponseEntity.ok().headers(headers).body(body);
     }
 
+    //add logout endpoint
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        HttpHeaders headers = new HttpHeaders();
+        Map<String, Object> body = authService.logout(headers);
+        return ResponseEntity.ok().headers(headers).body(body);
+    }
+
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(

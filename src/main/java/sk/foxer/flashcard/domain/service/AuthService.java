@@ -131,4 +131,30 @@ public class AuthService {
         );
     }
 
+    /**
+     * Logs out the user by clearing the access and refresh cookies.
+     *
+     * @param responseHeaders headers to add cookies for logout
+     * @return a map with a logout message
+     */
+    public Map<String, Object> logout(HttpHeaders responseHeaders) {
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(0)
+                .build();
+        responseHeaders.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/api/auth/refresh")
+                .maxAge(0)
+                .build();
+        responseHeaders.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        return Map.of("message", "Logged out successfully");
+    }
+
 }
