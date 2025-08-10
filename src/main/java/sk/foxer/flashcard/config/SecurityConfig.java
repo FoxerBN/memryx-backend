@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/user/create").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/user/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/user/*").authenticated()
                         .requestMatchers("/api/decks/**").authenticated()
                         .requestMatchers("/api/folders/**").authenticated()
                         .anyRequest().authenticated()
