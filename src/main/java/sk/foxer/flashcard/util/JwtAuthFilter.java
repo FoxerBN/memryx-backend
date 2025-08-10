@@ -54,7 +54,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = readAccessTokenFromCookie(request, "access_token");
         System.out.println("Access token from cookie: " + (token != null ? "FOUND" : "NOT FOUND"));
 
-        if (token == null || jwtService.isValid(token)) {
+        if (token == null || !jwtService.isValid(token)) {
             System.out.println("Token invalid or missing, continuing filter chain without auth");
             chain.doFilter(request, response);
             return;

@@ -48,7 +48,7 @@ public class JwtService {
         try {
             // If parsing succeeds and token is not expired, it's valid
             Claims claims = getClaims(token);
-            return !claims.getExpiration().after(new Date());
+            return claims.getExpiration().after(new Date());
         } catch (Exception e) {
             // Any exception (parse error, expired, invalid signature, ...) means not valid
             return true;

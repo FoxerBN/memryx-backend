@@ -27,7 +27,6 @@ class RateLimitTest {
         String url = "/api/auth/login";
         int rateLimitCount = 0;
 
-        // Pošli 25 požiadaviek
         for (int i = 1; i <= 25; i++) {
             ResponseEntity<String> response = restTemplate.postForEntity(
                     url,
@@ -42,7 +41,6 @@ class RateLimitTest {
             }
         }
 
-        // Skontroluj, že aspoň niektoré požiadavky boli rate limited
         assertThat(rateLimitCount).isGreaterThan(0);
         System.out.println("Rate limited requests: " + rateLimitCount);
     }

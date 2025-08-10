@@ -25,17 +25,17 @@ CREATE TABLE flashcard (
 );
 
 INSERT INTO app_user (username, display_name)
-VALUES ('demo', 'Demo User');
+VALUES ('Demo123', 'Demo User');
 
 INSERT INTO folder (app_user_id, name)
 VALUES
-  ((SELECT id FROM app_user WHERE username = 'demo'), 'Jazyky');
+  ((SELECT id FROM app_user WHERE username = 'Demo123'), 'Jazyky');
 
 INSERT INTO deck (folder_id, name, description)
 VALUES
-  ((SELECT id FROM folder WHERE name = 'Jazyky' AND app_user_id = (SELECT id FROM app_user WHERE username = 'demo')),
+  ((SELECT id FROM folder WHERE name = 'Jazyky' AND app_user_id = (SELECT id FROM app_user WHERE username = 'Demo123')),
    'Základné slovíčka SK‑CZ', 'Demo balíček 10 slovíčok'),
-  ((SELECT id FROM folder WHERE name = 'Jazyky' AND app_user_id = (SELECT id FROM app_user WHERE username = 'demo')),
+  ((SELECT id FROM folder WHERE name = 'Jazyky' AND app_user_id = (SELECT id FROM app_user WHERE username = 'Demo123')),
    'Základné slovíčka SK‑EN', 'Demo balíček 13 slovíčok');
 
 INSERT INTO flashcard (deck_id, front_text, back_text) VALUES

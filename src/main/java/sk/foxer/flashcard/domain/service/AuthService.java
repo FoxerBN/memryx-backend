@@ -90,7 +90,7 @@ public class AuthService {
                                        HttpHeaders responseHeaders,
                                        boolean secureCookies) {
 
-        if (jwtService.isValid(refreshToken)) {
+        if (!jwtService.isValid(refreshToken)) {
             throw new RuntimeException("Invalid or expired refresh token");
         }
 
@@ -100,7 +100,6 @@ public class AuthService {
             throw new ResourceNotFoundException("User not found: " + username);
         }
 
-        // Rotate refresh token (issue new one)
         Duration refreshExp = Duration.ofDays(180);
         String newRefresh = jwtService.generateToken(user, refreshExp);
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", newRefresh)

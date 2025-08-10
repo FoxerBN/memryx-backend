@@ -28,7 +28,7 @@ public class SecurityConfig {
     public FilterRegistrationBean<RateLimitFilter> rateLimitFilter() {
         FilterRegistrationBean<RateLimitFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new RateLimitFilter());
-        registrationBean.addUrlPatterns("/api/auth/*", "/api/user/create"); // len pre citlivé endpointy
+        registrationBean.addUrlPatterns("/api/auth/*", "/api/user/create");
         registrationBean.setOrder(1);
         return registrationBean;
     }
