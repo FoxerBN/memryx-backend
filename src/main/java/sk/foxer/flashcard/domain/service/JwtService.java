@@ -51,7 +51,7 @@ public class JwtService {
             return claims.getExpiration().after(new Date());
         } catch (Exception e) {
             // Any exception (parse error, expired, invalid signature, ...) means not valid
-            return true;
+            return false;
         }
     }
 

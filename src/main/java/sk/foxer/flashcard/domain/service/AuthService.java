@@ -136,23 +136,28 @@ public class AuthService {
      * @param responseHeaders headers to add cookies for logout
      * @return a map with a logout message
      */
-    public Map<String, Object> logout(HttpHeaders responseHeaders) {
-        ResponseCookie accessCookie = ResponseCookie.from("access_token", "")
+    // AuthService.java
+    public Map<String, Object> logout(HttpHeaders responseHeaders, boolean secureCookies) {
+        // access_token
+        ResponseCookie accessDel = ResponseCookie.from("access_token", "")
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
+                .secure(secureCookies)
+                .sameSite(secureCookies ? "None" : "Lax")
                 .path("/")
                 .maxAge(0)
                 .build();
-        responseHeaders.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", "")
+        responseHeaders.add(HttpHeaders.SET_COOKIE, accessDel.toString());
+
+        // refresh_token (rovnaké flags + rovnaký path ako pri vytvorení)
+        ResponseCookie refreshDel = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
+                .secure(secureCookies)
+                .sameSite(secureCookies ? "None" : "Lax")
                 .path("/api/auth/refresh")
                 .maxAge(0)
                 .build();
-        responseHeaders.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+        responseHeaders.add(HttpHeaders.SET_COOKIE, refreshDel.toString());
+
         return Map.of("message", "Logged out successfully");
     }
 
