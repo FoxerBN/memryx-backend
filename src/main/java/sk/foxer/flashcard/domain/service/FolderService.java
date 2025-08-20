@@ -1,6 +1,8 @@
 package sk.foxer.flashcard.domain.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sk.foxer.flashcard.api.exception.ResourceNotFoundException;
 import sk.foxer.flashcard.api.exception.ValidationException;
 import sk.foxer.flashcard.domain.model.AppUser;
@@ -11,61 +13,47 @@ import sk.foxer.flashcard.web.dto.folder.FolderCreateRequestDto;
 import sk.foxer.flashcard.web.dto.folder.FolderDto;
 import sk.foxer.flashcard.web.dto.folder.FolderSummaryDto;
 import sk.foxer.flashcard.web.mapper.folder.FolderMapper;
-import sk.foxer.flashcard.web.mapper.folder.FolderSummaryMapper;
 
 import java.util.List;
 
-/**
- * Service for managing folders (CRUD + user filtering + summary).
- */
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class FolderService {
+
     private final FolderRepository folderRepository;
     private final AppUserRepository appUserRepository;
     private final FolderMapper folderMapper;
-    private final FolderSummaryMapper folderSummaryMapper;
 
-    public FolderService(FolderRepository folderRepository,
-                         AppUserRepository appUserRepository,
-                         FolderMapper folderMapper,
-                         FolderSummaryMapper folderSummaryMapper) {
-        this.folderRepository = folderRepository;
-        this.appUserRepository = appUserRepository;
-        this.folderMapper = folderMapper;
-        this.folderSummaryMapper = folderSummaryMapper;
+    public List<FolderDto> getAllFolders() {
+        var folders = folderRepository.findAll();
+        return folderMapper.toDtoList(folders);
     }
 
-    /** Get all folders (entities). */
-    public List<Folder> getAllFolders() {
-        return folderRepository.findAll();
-    }
-
-    /** Get folder by ID (entity). */
-    public Folder getFolderById(Long id) {
-        return folderRepository.findById(id)
+    public FolderDto getFolderById(Long id) {
+        Folder folder = folderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + id));
+        return folderMapper.toDto(folder);
     }
 
-    /** Get all folders owned by a user (entities). */
-    public List<Folder> getFoldersByUserId(Long userId) {
+    public List<FolderDto> getFoldersByUserId(Long userId) {
+        // prísna validácia, ostáva
         AppUser user = appUserRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        return folderRepository.findByAppUserId(user.getId());
+        var folders = folderRepository.findByAppUserId(user.getId());
+        return folderMapper.toDtoList(folders);
     }
 
-    /** Get all folders owned by a user, as summary DTOs. */
     public List<FolderSummaryDto> getFolderSummariesByUserId(Long userId) {
-        List<Folder> folders = getFoldersByUserId(userId);
-        return folderSummaryMapper.toSummaryDtoList(folders);
+        // priamo projekcia z DB
+        return folderRepository.findFolderSummaries(userId);
     }
 
-    /** Get all folders as summary DTOs. */
     public List<FolderSummaryDto> getAllFolderSummaries() {
-        List<Folder> folders = folderRepository.findAll();
-        return folderSummaryMapper.toSummaryDtoList(folders);
+        return folderRepository.findFolderSummaries(null);
     }
 
-    /** Create a new folder for a user. */
+    @Transactional
     public FolderDto createFolder(Long userId, FolderCreateRequestDto dto) {
         if (dto == null) throw new ValidationException("Request body is empty");
         if (dto.getName() == null || dto.getName().isBlank()) {
@@ -87,22 +75,15 @@ public class FolderService {
         return folderMapper.toDto(saved);
     }
 
-    /** Delete folder by id */
-    public void deleteFolder(Long id) {
-        Folder folder = folderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + id));
-        folderRepository.delete(folder);
-    }
-
-    /** Update folder (name) */
+    @Transactional
     public FolderDto updateFolder(Long id, FolderCreateRequestDto dto) {
-        Folder folder = folderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + id));
-
         if (dto == null) throw new ValidationException("Request body is empty");
         if (dto.getName() == null || dto.getName().isBlank()) {
             throw new ValidationException("Folder name is required");
         }
+
+        Folder folder = folderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + id));
 
         Folder existingFolder = folderRepository.findByNameAndAppUserId(dto.getName(), folder.getAppUser().getId());
         if (existingFolder != null && !existingFolder.getId().equals(id)) {
@@ -112,5 +93,12 @@ public class FolderService {
         folder.setName(dto.getName());
         Folder saved = folderRepository.save(folder);
         return folderMapper.toDto(saved);
+    }
+
+    @Transactional
+    public void deleteFolder(Long id) {
+        Folder folder = folderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + id));
+        folderRepository.delete(folder);
     }
 }

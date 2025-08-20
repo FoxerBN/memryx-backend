@@ -1,12 +1,18 @@
 package sk.foxer.flashcard.web.dto.folder;
 
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
 public class FolderSummaryDto {
     private Long id;
     private String name;
-    private int deckCount;
+    private long deckCount;
+
+
+    public FolderSummaryDto(Long id, String name, long deckCount) {
+        this.id = id;
+        this.name = name;
+        this.deckCount = deckCount;
+    }
+
 }

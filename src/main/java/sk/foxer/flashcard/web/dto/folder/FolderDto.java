@@ -11,5 +11,6 @@ import java.util.List;
 public class FolderDto {
     private Long id;
     private String name;
+    private Long userId;
     private List<DeckSummaryDto> decks;
 }

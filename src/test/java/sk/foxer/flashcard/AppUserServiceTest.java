@@ -2,7 +2,6 @@ package sk.foxer.flashcard;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import sk.foxer.flashcard.api.exception.ConflictException;
 import sk.foxer.flashcard.api.exception.EmptyBodyException;
 import sk.foxer.flashcard.api.exception.ResourceNotFoundException;
@@ -10,8 +9,8 @@ import sk.foxer.flashcard.api.exception.ValidationException;
 import sk.foxer.flashcard.domain.model.AppUser;
 import sk.foxer.flashcard.domain.repository.AppUserRepository;
 import sk.foxer.flashcard.domain.service.AppUserService;
+import sk.foxer.flashcard.web.dto.appuser.AppUserBasicDto;
 import sk.foxer.flashcard.web.dto.appuser.AppUserCreateRequestDto;
-import sk.foxer.flashcard.web.dto.appuser.AppUserUpdateRequestDto;
 import sk.foxer.flashcard.web.mapper.appuser.AppUserBasicMapper;
 
 import java.util.Optional;
@@ -29,18 +28,23 @@ class AppUserServiceTest {
     void setUp() {
         appUserRepository = mock(AppUserRepository.class);
         appUserBasicMapper = mock(AppUserBasicMapper.class);
-        appUserService = new AppUserService(appUserRepository);
+        appUserService = new AppUserService(appUserRepository, appUserBasicMapper);
     }
 
     @Test
     void shouldGetUserById() {
-        AppUser user = new AppUser(1L, "user1", "User One", null);
+        var user = new AppUser(1L, "user1", "User One", null);
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        AppUser result = appUserService.getUserById(1L);
+        var dto = new AppUserBasicDto();
+        dto.setId(1L); dto.setUsername("user1"); dto.setDisplayName("User One");
+        when(appUserBasicMapper.toDto(user)).thenReturn(dto);
+
+        var result = appUserService.getUserById(1L);
 
         assertEquals("user1", result.getUsername());
-        verify(appUserRepository, times(1)).findById(1L);
+        verify(appUserRepository).findById(1L);
+        verify(appUserBasicMapper).toDto(user);
     }
 
     @Test
@@ -51,61 +55,70 @@ class AppUserServiceTest {
 
     @Test
     void shouldCreateUser() {
-        AppUserCreateRequestDto dto = new AppUserCreateRequestDto();
-        dto.setUsername("foxer");
-        dto.setDisplayName("FoxerSK");
+        var dtoIn = new AppUserCreateRequestDto();
+        dtoIn.setUsername("foxer");
+        dtoIn.setDisplayName("FoxerSK");
 
-        AppUser user = new AppUser(null, "foxer", "FoxerSK", null);
-        when(appUserBasicMapper.toEntity(dto)).thenReturn(user);
+        var entity = new AppUser(null, "foxer", "FoxerSK", null);
         when(appUserRepository.existsByUsername("foxer")).thenReturn(false);
-        when(appUserRepository.save(user)).thenReturn(user);
+        when(appUserBasicMapper.toEntity(dtoIn)).thenReturn(entity);
+        when(appUserRepository.save(entity)).thenReturn(entity);
 
-        AppUser created = appUserService.createUser(dto, appUserBasicMapper);
+        var dtoOut = new AppUserBasicDto();
+        dtoOut.setId(1L); dtoOut.setUsername("foxer"); dtoOut.setDisplayName("FoxerSK");
+        when(appUserBasicMapper.toDto(entity)).thenReturn(dtoOut);
+
+        var created = appUserService.createUser(dtoIn);
 
         assertEquals("foxer", created.getUsername());
-        verify(appUserRepository).save(user);
+        verify(appUserBasicMapper).toEntity(dtoIn);
+        verify(appUserRepository).save(entity);
+        verify(appUserBasicMapper).toDto(entity);
     }
 
     @Test
     void shouldThrowIfUsernameExists() {
-        AppUserCreateRequestDto dto = new AppUserCreateRequestDto();
+        var dto = new AppUserCreateRequestDto();
         dto.setUsername("foxer");
         dto.setDisplayName("FoxerSK");
 
         when(appUserRepository.existsByUsername("foxer")).thenReturn(true);
 
-        assertThrows(ConflictException.class, () -> appUserService.createUser(dto, appUserBasicMapper));
+        assertThrows(ConflictException.class, () -> appUserService.createUser(dto));
     }
 
     @Test
     void shouldThrowIfDtoIsNull() {
-        assertThrows(EmptyBodyException.class, () -> appUserService.createUser(null, appUserBasicMapper));
+        assertThrows(EmptyBodyException.class, () -> appUserService.createUser(null));
     }
 
     @Test
     void shouldThrowIfDisplayNameIsNullOrEmpty() {
-        AppUserCreateRequestDto dto = new AppUserCreateRequestDto();
+        var dto = new AppUserCreateRequestDto();
         dto.setUsername("foxer");
         dto.setDisplayName(null);
-
         when(appUserRepository.existsByUsername("foxer")).thenReturn(false);
-
-        assertThrows(ValidationException.class, () -> appUserService.createUser(dto, appUserBasicMapper));
+        assertThrows(ValidationException.class, () -> appUserService.createUser(dto));
 
         dto.setDisplayName("");
-        assertThrows(ValidationException.class, () -> appUserService.createUser(dto, appUserBasicMapper));
+        assertThrows(ValidationException.class, () -> appUserService.createUser(dto));
     }
 
     @Test
     void shouldUpdateDisplayName() {
-        AppUser user = new AppUser(1L, "foxer", "OldName", null);
+        var user = new AppUser(1L, "foxer", "OldName", null);
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(appUserRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(appUserRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        AppUser updated = appUserService.updateDisplayName(1L, "NewName");
+        var out = new AppUserBasicDto();
+        out.setId(1L); out.setUsername("foxer"); out.setDisplayName("NewName");
+        when(appUserBasicMapper.toDto(user)).thenReturn(out);
+
+        var updated = appUserService.updateDisplayName(1L, "NewName");
 
         assertEquals("NewName", updated.getDisplayName());
         verify(appUserRepository).save(user);
+        verify(appUserBasicMapper).toDto(user);
     }
 
     @Test
@@ -114,13 +127,13 @@ class AppUserServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> appUserService.updateDisplayName(2L, "NewName"));
     }
 
-
     @Test
     void shouldDeleteUser() {
-        AppUser user = new AppUser(1L, "foxer", "name", null);
+        var user = new AppUser(1L, "foxer", "name", null);
         when(appUserRepository.findById(1L)).thenReturn(Optional.of(user));
 
         appUserService.deleteUser(1L);
+
         verify(appUserRepository).delete(user);
     }
 
@@ -128,36 +141,5 @@ class AppUserServiceTest {
     void shouldThrowWhenDeleteUserNotFound() {
         when(appUserRepository.findById(2L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> appUserService.deleteUser(2L));
-    }
-
-    @Test
-    void shouldCallBasicMapperOnCreateUser() {
-        AppUserCreateRequestDto dto = new AppUserCreateRequestDto();
-        dto.setUsername("foxer");
-        dto.setDisplayName("FoxerSK");
-
-        when(appUserRepository.existsByUsername("foxer")).thenReturn(false);
-
-        appUserService.createUser(dto, appUserBasicMapper);
-        verify(appUserBasicMapper).toEntity(dto);
-    }
-
-    @Test
-    void shouldSaveCorrectUserOnCreate() {
-        AppUserCreateRequestDto dto = new AppUserCreateRequestDto();
-        dto.setUsername("testuser");
-        dto.setDisplayName("Test User");
-
-        AppUser user = new AppUser(null, "testuser", "Test User", null);
-        when(appUserBasicMapper.toEntity(dto)).thenReturn(user);
-        when(appUserRepository.existsByUsername("testuser")).thenReturn(false);
-        when(appUserRepository.save(any())).thenReturn(user);
-
-        appUserService.createUser(dto, appUserBasicMapper);
-
-        ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
-        verify(appUserRepository).save(captor.capture());
-        assertEquals("testuser", captor.getValue().getUsername());
-        assertEquals("Test User", captor.getValue().getDisplayName());
     }
 }

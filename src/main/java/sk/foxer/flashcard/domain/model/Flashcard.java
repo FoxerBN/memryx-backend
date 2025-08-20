@@ -24,7 +24,7 @@ public class Flashcard {
     @Column(nullable = false)
     private String backText;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "deck_id", nullable = false)
     private Deck deck;
 }
