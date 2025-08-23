@@ -37,7 +37,6 @@ public class FolderService {
     }
 
     public List<FolderDto> getFoldersByUserId(Long userId) {
-        // prísna validácia, ostáva
         AppUser user = appUserRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         var folders = folderRepository.findByAppUserId(user.getId());
