@@ -44,7 +44,6 @@ public class FolderService {
     }
 
     public List<FolderSummaryDto> getFolderSummariesByUserId(Long userId) {
-        // priamo projekcia z DB
         return folderRepository.findFolderSummaries(userId);
     }
 

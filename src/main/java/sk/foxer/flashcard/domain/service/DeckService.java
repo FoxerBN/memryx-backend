@@ -39,7 +39,6 @@ public class DeckService {
     }
 
     public List<DeckDto> getDecksByFolderId(Long folderId) {
-        // validácia existencie foldera (voliteľná – máš ju nižšie, nechávam rýchlu verziu)
         var decks = deckRepository.findByFolderId(folderId); // @EntityGraph(folder)
         return deckMapper.toDtoList(decks);
     }
@@ -49,7 +48,6 @@ public class DeckService {
     }
 
     public List<DeckSummaryDto> getDeckSummariesByFolder(Long folderId) {
-        // Ak chceš prísnu validáciu, nechaj aj kontrolu existencie foldera:
         folderRepository.findById(folderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Folder not found with id: " + folderId));
         return deckRepository.findDeckSummaries(folderId);
@@ -65,11 +63,9 @@ public class DeckService {
         Folder folder = folderRepository.findById(dto.getFolderId())
                 .orElseThrow(() -> new ValidationException("Folder not found with id: " + dto.getFolderId()));
 
-        // deck z mappera – bez vzťahov
         Deck deck = deckMapper.toEntity(dto);
         deck.setFolder(folder);
 
-        // → vytvor entitné flashcards a nastav obojsmerný vzťah
         List<Flashcard> flashcards = dto.getFlashcards().stream().map(fDto -> {
             Flashcard f = new Flashcard();
             f.setFrontText(fDto.getFrontText());
@@ -78,7 +74,6 @@ public class DeckService {
             return f;
         }).toList();
 
-        // ak list v entite nie je inicializovaný, inicializuj
         if (deck.getFlashcards() == null) {
             deck.setFlashcards(new ArrayList<>());
         }
